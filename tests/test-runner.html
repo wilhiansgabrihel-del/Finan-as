@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Testes — Finanças</title>
+  <style>
+    body { font-family: system-ui; padding: 1rem; }
+    .pass { color: green; }
+    .fail { color: red; }
+  </style>
+</head>
+<body>
+  <h1>Testes allocation-core</h1>
+  <ul id="results"></ul>
+  <script src="../js/storage.js"></script>
+  <script src="../js/allocation-core.js"></script>
+  <script>
+    const results = document.getElementById("results");
+    function test(name, fn) {
+      try {
+        fn();
+        results.innerHTML += `<li class="pass">✓ ${name}</li>`;
+      } catch (e) {
+        results.innerHTML += `<li class="fail">✗ ${name}: ${e.message}</li>`;
+      }
+    }
+    test("resolveCategory percent", () => {
+      const r = Alloc.resolveCategory({ item: "X", percent: 10, fixedValue: false }, 1000);
+      if (r.estimatedValue !== 100 || r.percent !== 10) throw new Error(JSON.stringify(r));
+    });
+    test("resolveCategory locked value", () => {
+      const r = Alloc.resolveCategory({ item: "X", fixedValue: true, estimatedValue: 200, percent: 0 }, 1000);
+      if (r.estimatedValue !== 200 || r.percent !== 20) throw new Error(JSON.stringify(r));
+    });
+    test("migrate from legacy name", () => {
+      const m = Alloc.migrateCategory({ name: "Moto", group: "Trans", percent: 5 });
+      if (m.item !== "Moto" || m.structuralGroup !== "Trans") throw new Error(JSON.stringify(m));
+    });
+    test("getNetIncome", () => {
+      const n = Alloc.getNetIncome({ monthlyIncome: 1000, monthlyDeductions: 200, useNetIncome: true });
+      if (n !== 800) throw new Error(String(n));
+    });
+    test("parseAmountInput comma", () => {
+      if (Alloc.parseAmountInput("83,20") !== 83.2) throw new Error("comma");
+    });
+  </script>
+</body>
+</html>

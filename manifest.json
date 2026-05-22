@@ -1,0 +1,11 @@
+{
+  "name": "Finanças",
+  "short_name": "Finanças",
+  "description": "Controle de renda e alocação financeira",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f1419",
+  "theme_color": "#22c55e",
+  "lang": "pt-BR",
+  "icons": []
+}

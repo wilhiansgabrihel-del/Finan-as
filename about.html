@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sobre — Finanças</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <article class="about-page card">
+    <h1>Finanças</h1>
+    <p>Aplicação web de finanças pessoais para controlar renda mensal e alocar por categorias.</p>
+    <h2>Recursos</h2>
+    <ul>
+      <li>Login local com senha protegida (PBKDF2)</li>
+      <li>Perfis financeiros independentes</li>
+      <li>Renda bruta, descontos e renda líquida</li>
+      <li>Alocação por % ou valor, com valor fixo opcional</li>
+      <li>Metas por categoria, grupos e histórico de renda</li>
+      <li>Simulador de renda, dashboard e gráficos</li>
+      <li>Exportar JSON/CSV e importar backup</li>
+    </ul>
+    <p><a href="app.html">Voltar ao painel</a> · <a href="index.html">Login</a></p>
+    <p class="hint">Projeto educacional — dados armazenados no navegador.</p>
+  </article>
+  <script>document.documentElement.setAttribute("data-theme", localStorage.getItem("financas_theme") || "dark");</script>
+</body>
+</html>

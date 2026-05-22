@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#0f1419">
+  <meta name="description" content="Finanças pessoais — alocação de renda">
+  <link rel="manifest" href="manifest.json">
+  <title>Finanças — Painel</title>
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js" defer></script>
+</head>
+<body class="app-page">
+  <button type="button" class="sidebar-toggle" id="sidebar-toggle" aria-label="Menu" hidden>☰</button>
+  <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <span class="logo" aria-hidden="true">₢</span>
+      <span>Finanças</span>
+    </div>
+    <nav>
+      <button type="button" class="nav-item active" data-section="dashboard">Dashboard</button>
+      <button type="button" class="nav-item" data-section="profile">Perfil</button>
+      <button type="button" class="nav-item" data-section="income">Renda</button>
+      <button type="button" class="nav-item" data-section="allocation">Alocação</button>
+      <button type="button" class="nav-item" data-section="simulator">Simulador</button>
+      <button type="button" class="nav-item" data-section="data">Dados</button>
+    </nav>
+    <a href="about.html" class="nav-link">Sobre</a>
+    <button type="button" id="logout-btn" class="btn btn-ghost">Sair</button>
+  </aside>
+
+  <div class="app-main">
+    <header class="topbar">
+      <div class="topbar-left">
+        <button type="button" id="sidebar-collapse-btn" class="sidebar-collapse-btn" aria-label="Ocultar menu" title="Ocultar menu">
+          <span class="sidebar-collapse-icon" aria-hidden="true">◀</span>
+          <span class="sidebar-collapse-label">Ocultar menu</span>
+        </button>
+        <h2 id="page-title">Dashboard</h2>
+      </div>
+      <span class="user-badge" id="user-badge"></span>
+    </header>
+
+    <section id="section-dashboard" class="section active">
+      <div class="dashboard-grid">
+        <div class="card stat-card"><span class="stat-label">Renda líquida</span><span class="stat-value" id="dash-income">R$ 0,00</span></div>
+        <div class="card stat-card"><span class="stat-label">Total alocado %</span><span class="stat-value" id="dash-allocated-pct">0%</span></div>
+        <div class="card stat-card"><span class="stat-label">Total alocado R$</span><span class="stat-value" id="dash-allocated-val">R$ 0,00</span></div>
+        <div class="card stat-card"><span class="stat-label">Saldo / excedente</span><span class="stat-value" id="dash-balance">R$ 0,00</span></div>
+        <div class="card stat-card"><span class="stat-label">Categorias</span><span class="stat-value" id="dash-categories">0</span></div>
+        <div class="card stat-card"><span class="stat-label" id="dash-essential-label">Essenciais</span><span class="stat-value" id="dash-fixed">0</span></div>
+      </div>
+      <div class="card">
+        <h3>Por grupo</h3>
+        <ul id="dash-groups" class="dash-list"></ul>
+      </div>
+    </section>
+
+    <section id="section-profile" class="section">
+      <div class="card">
+        <h3>Seu perfil</h3>
+        <form id="profile-form">
+          <label for="profile-name">Nome exibido</label>
+          <input type="text" id="profile-name" required>
+          <p class="hint">Login: <strong id="profile-login"></strong></p>
+          <p class="hint">ID: <code id="profile-id" class="user-id"></code></p>
+          <label class="checkbox theme-check">
+            <input type="checkbox" id="theme-toggle">
+            <span>Tema claro</span>
+          </label>
+          <button type="submit" class="btn btn-primary">Salvar perfil</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Perfis financeiros</h3>
+        <label for="profile-select">Perfil ativo</label>
+        <select id="profile-select"></select>
+        <button type="button" id="new-profile-btn" class="btn btn-secondary">Novo perfil</button>
+        <p class="hint">Cada perfil tem alocações e renda independentes.</p>
+      </div>
+    </section>
+
+    <section id="section-income" class="section">
+      <div class="card">
+        <h3>Renda mensal</h3>
+        <form id="income-form">
+          <label for="monthly-income">Valor bruto (R$)</label>
+          <input type="number" id="monthly-income" min="0" step="0.01" required>
+          <label for="monthly-deductions">Descontos (R$)</label>
+          <input type="number" id="monthly-deductions" min="0" step="0.01" value="0">
+          <label class="checkbox">
+            <input type="checkbox" id="use-net-income" checked>
+            <span>Alocar sobre renda líquida (bruto − descontos)</span>
+          </label>
+          <button type="submit" class="btn btn-primary">Salvar renda</button>
+        </form>
+      </div>
+      <div class="grid-2">
+        <div class="card stat-card"><span class="stat-label">Renda líquida</span><span class="stat-value" id="income-net-display">R$ 0,00</span></div>
+        <div class="card stat-card"><span class="stat-label">Bruto cadastrado</span><span class="stat-value" id="income-display">R$ 0,00</span></div>
+      </div>
+      <div class="card">
+        <h3>Evolução da renda</h3>
+        <div class="chart-wrap chart-wrap--income">
+          <canvas id="income-history-chart"></canvas>
+        </div>
+        <p id="income-chart-empty" class="hint">Salve a renda algumas vezes para ver o histórico em gráfico.</p>
+        <h3 class="subsection-title">Registros</h3>
+        <ul id="income-history-list" class="dash-list"></ul>
+      </div>
+    </section>
+
+    <section id="section-allocation" class="section">
+      <div class="grid-2">
+        <div class="card alloc-form-card" id="alloc-form-card">
+          <div class="card-title-row">
+            <h3>Alocação</h3>
+            <button type="button" class="card-visibility-btn" data-card="alloc-form-card" aria-label="Ocultar Alocação" title="Ocultar" aria-pressed="false">
+              <svg class="icon-eye icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <svg class="icon-eye icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+            </button>
+          </div>
+          <div class="card-panel">
+          <p class="hint" id="allocation-hint"></p>
+          <form id="add-category-form" class="alloc-form-grid" novalidate>
+            <label>Item <input type="text" id="field-item" placeholder="Ex: Moto Parcela" required></label>
+            <label>Grupo estrutural
+              <input type="text" id="field-structural-group" list="datalist-structural-groups" placeholder="Ex: Custos Fixos" autocomplete="off">
+            </label>
+            <label>Categoria
+              <input type="text" id="field-category" list="datalist-categories" placeholder="Ex: Transporte" autocomplete="off">
+            </label>
+            <div class="form-row-mode">
+              <div class="allocation-mode">
+                <button type="button" class="mode-btn active" data-mode="percent">Por %</button>
+                <button type="button" class="mode-btn" data-mode="value">Por valor</button>
+              </div>
+              <div id="field-percent" class="amount-field">
+                <input type="number" id="category-percent" min="0.01" step="0.01" placeholder="%">
+                <span class="field-suffix">%</span>
+              </div>
+              <div id="field-value" class="amount-field" hidden>
+                <span class="field-prefix">R$</span>
+                <input type="text" id="category-value" inputmode="decimal" placeholder="Valor est.">
+              </div>
+            </div>
+            <label class="checkbox"><input type="checkbox" id="field-essential"><span>Essencial</span></label>
+            <label class="checkbox"><input type="checkbox" id="field-lock-value"><span>Travar valor estimado (não muda com a renda)</span></label>
+            <button type="submit" class="btn btn-secondary">Adicionar</button>
+          </form>
+          <p id="allocation-remaining" class="allocation-remaining" hidden></p>
+          <ul id="category-list" class="category-list" hidden></ul>
+          <div class="percent-bar-wrap" hidden><div class="percent-bar" id="percent-bar"></div></div>
+          <p id="percent-total" class="percent-total" hidden></p>
+          <p id="allocation-error" class="error" hidden></p>
+          <button type="button" id="save-allocation-btn" class="btn btn-primary" disabled>Salvar alocação</button>
+          </div>
+        </div>
+        <div class="card chart-card" id="chart-dist-card">
+          <div class="chart-header">
+            <div class="card-title-row card-title-row--inline">
+              <h3>Distribuição</h3>
+              <button type="button" class="card-visibility-btn" data-card="chart-dist-card" aria-label="Ocultar Distribuição" title="Ocultar" aria-pressed="false">
+                <svg class="icon-eye icon-eye-open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <svg class="icon-eye icon-eye-closed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true" hidden><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+              </button>
+            </div>
+          </div>
+          <div class="card-panel">
+            <div class="chart-toolbar">
+            <label class="chart-type-label">Tipo
+              <select id="chart-type-select" class="chart-type-select" aria-label="Tipo de gráfico"></select>
+            </label>
+            </div>
+          <div class="chart-wrap"><canvas id="allocation-chart"></canvas></div>
+          <p id="chart-empty" class="hint">Cadastre categorias para ver o gráfico.</p>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-toolbar">
+          <h3>Valores calculados</h3>
+          <label>Ordenar
+            <select id="table-sort">
+              <option value="item">Item</option>
+              <option value="structuralGroup">Grupo estrutural</option>
+              <option value="category">Categoria</option>
+              <option value="percent">%</option>
+              <option value="value">Valor</option>
+            </select>
+          </label>
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="allocation-table">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Grupo estrutural</th>
+                <th>Categoria</th>
+                <th>Valor est.</th>
+                <th>%</th>
+                <th>Essencial</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+            <tfoot>
+              <tr><td colspan="3"><strong>Total</strong></td><td id="table-total-value">R$ 0,00</td><td id="table-total-percent">0%</td><td colspan="2"></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="section-simulator" class="section">
+      <div class="card">
+        <h3>Simulador — e se a renda mudar?</h3>
+        <p class="hint">Simula sem salvar. Use para testar outro valor de renda.</p>
+        <label for="sim-income">Renda simulada (R$)</label>
+        <input type="number" id="sim-income" min="0" step="0.01">
+        <button type="button" id="sim-reset" class="btn btn-secondary">Usar renda real</button>
+        <p class="allocation-remaining" id="sim-total">Total: 0%</p>
+        <ul id="sim-results" class="dash-list"></ul>
+      </div>
+    </section>
+
+    <section id="section-data" class="section">
+      <div class="card">
+        <h3>Exportar / Importar</h3>
+        <div class="btn-row">
+          <button type="button" id="export-json-btn" class="btn btn-secondary">Backup JSON</button>
+          <button type="button" id="export-csv-btn" class="btn btn-secondary">Exportar CSV</button>
+        </div>
+        <label class="btn btn-secondary import-label">
+          Importar JSON
+          <input type="file" id="import-json-input" accept=".json,application/json" hidden>
+        </label>
+        <p class="hint">O backup inclui categorias, renda e perfis.</p>
+      </div>
+    </section>
+  </div>
+
+  <div id="edit-category-modal" class="modal-overlay" hidden>
+    <div class="modal-card" role="dialog">
+      <h3>Editar alocação</h3>
+      <form id="edit-category-form" novalidate>
+        <label for="edit-item">Item</label>
+        <input type="text" id="edit-item" required>
+        <label for="edit-structural-group">Grupo estrutural</label>
+        <input type="text" id="edit-structural-group" list="datalist-structural-groups" placeholder="Ex: Custos Fixos" autocomplete="off">
+        <label for="edit-category-label">Categoria</label>
+        <input type="text" id="edit-category-label" list="datalist-categories" placeholder="Ex: Transporte" autocomplete="off">
+        <label for="edit-estimated-value">Valor estimado (R$)</label>
+        <input type="text" id="edit-estimated-value" inputmode="decimal" required>
+        <label for="edit-percent">Porcentagem (%)</label>
+        <input type="number" id="edit-percent" min="0.01" step="0.01" required>
+        <label class="checkbox">
+          <input type="checkbox" id="edit-essential">
+          <span>Essencial</span>
+        </label>
+        <label class="checkbox">
+          <input type="checkbox" id="edit-lock-value">
+          <span>Travar valor estimado</span>
+        </label>
+        <p id="edit-category-error" class="error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="edit-category-cancel">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <datalist id="datalist-structural-groups"></datalist>
+  <datalist id="datalist-categories"></datalist>
+
+  <script src="js/storage.js"></script>
+  <script src="js/allocation-core.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/toast.js"></script>
+  <script src="js/theme.js"></script>
+  <script src="js/export-data.js"></script>
+  <script src="js/db.js"></script>
+  <script src="js/crypto-auth.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/features.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
