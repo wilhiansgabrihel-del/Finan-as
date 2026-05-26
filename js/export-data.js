@@ -6,12 +6,15 @@ const ExportData = {
       user: {
         displayName: user.displayName,
         loginName: user.loginName,
+        email: user.email || "",
+        phone: user.phone || "",
         monthlyIncome: user.monthlyIncome,
         monthlyDeductions: user.monthlyDeductions,
         useNetIncome: user.useNetIncome,
         incomeHistory: user.incomeHistory || [],
         profiles: user.profiles || [],
         activeProfileId: user.activeProfileId,
+        profileThresholds: user.profileThresholds || Alloc.mergeProfileThresholds(),
       },
       categories: savedCategories.map((c) => Alloc.cloneCategory(c)),
     };

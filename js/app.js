@@ -89,19 +89,128 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   window.location.href = "index.html";
 });
 
+function getProfileThresholds() {
+  return Alloc.mergeProfileThresholds(user.profileThresholds);
+}
+
+function setPctStatusClass(el, status) {
+  if (!el) return;
+  el.classList.remove("pct-ok", "pct-warning", "pct-danger", "pct-critical");
+  el.classList.add(`pct-${status}`);
+}
+
+function fillThresholdForm(thresholds) {
+  const map = {
+    "th-fixed-max": thresholds.fixedCostsMax,
+    "th-investment-min": thresholds.investmentMin,
+    "th-warning-from": thresholds.warningFrom,
+    "th-danger-from": thresholds.dangerFrom,
+    "th-critical-from": thresholds.criticalFrom,
+  };
+  Object.entries(map).forEach(([id, value]) => {
+    const input = document.getElementById(id);
+    if (input) input.value = value;
+  });
+}
+
+function readThresholdForm() {
+  return {
+    fixedCostsMax: Alloc.parseAmountInput(document.getElementById("th-fixed-max")?.value),
+    investmentMin: Alloc.parseAmountInput(document.getElementById("th-investment-min")?.value),
+    warningFrom: Alloc.parseAmountInput(document.getElementById("th-warning-from")?.value),
+    dangerFrom: Alloc.parseAmountInput(document.getElementById("th-danger-from")?.value),
+    criticalFrom: Alloc.parseAmountInput(document.getElementById("th-critical-from")?.value),
+  };
+}
+
+function initProfileThresholds() {
+  const form = document.getElementById("profile-thresholds-form");
+  if (!form) return;
+
+  fillThresholdForm(getProfileThresholds());
+
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const errEl = document.getElementById("thresholds-error");
+    const result = Alloc.validateProfileThresholds(readThresholdForm());
+    if (!result.ok) {
+      errEl.textContent = result.errors.join(" ");
+      errEl.hidden = false;
+      return;
+    }
+    errEl.hidden = true;
+    persistUser({ profileThresholds: result.thresholds });
+    fillThresholdForm(getProfileThresholds());
+    updateAllocationUI();
+    AppFeatures.renderDashboard();
+    showToast("Configurações salvas.");
+  });
+
+  document.getElementById("thresholds-reset-btn")?.addEventListener("click", () => {
+    persistUser({ profileThresholds: { ...Alloc.PROFILE_THRESHOLDS_DEFAULTS } });
+    fillThresholdForm(getProfileThresholds());
+    updateAllocationUI();
+    AppFeatures.renderDashboard();
+    showToast("Padrão de fábrica restaurado.");
+  });
+}
+
+function updateThresholdSummaryRows(income) {
+  const thresholds = getProfileThresholds();
+  const groups = Alloc.groupSummary(savedCategories, income);
+  const fixed = groups["Custos Fixos"] || { percent: 0, amount: 0 };
+  const investPct = Alloc.sumCategoryLabelPercent(savedCategories, income, "Investimento");
+  const investAmount = Alloc.sumCategoryLabelAmount(savedCategories, income, "Investimento");
+
+  const fixedPctEl = document.getElementById("table-fixed-percent");
+  const investPctEl = document.getElementById("table-invest-percent");
+  const fixedValEl = document.getElementById("table-fixed-value");
+  const investValEl = document.getElementById("table-invest-value");
+
+  if (fixedPctEl) {
+    fixedPctEl.textContent = `${fixed.percent.toFixed(2)}%`;
+    setPctStatusClass(fixedPctEl, Alloc.fixedCostsColorStatus(fixed.percent, thresholds));
+  }
+  if (investPctEl) {
+    investPctEl.textContent = `${investPct.toFixed(2)}%`;
+    setPctStatusClass(investPctEl, Alloc.investmentColorStatus(investPct, thresholds));
+  }
+  if (fixedValEl) fixedValEl.textContent = formatCurrency(fixed.amount);
+  if (investValEl) investValEl.textContent = formatCurrency(investAmount);
+}
+
 function initProfile() {
   document.getElementById("user-badge").textContent = user.displayName || user.loginName;
   document.getElementById("profile-name").value = user.displayName || user.loginName;
+  document.getElementById("profile-email").value = user.email || "";
+  document.getElementById("profile-phone").value = user.phone ? formatPhoneDisplay(user.phone) : "";
   document.getElementById("profile-login").textContent = user.loginName;
   document.getElementById("profile-id").textContent = user.id || "—";
 
   document.getElementById("profile-form").addEventListener("submit", (e) => {
     e.preventDefault();
     const displayName = document.getElementById("profile-name").value.trim();
-    persistUser({ displayName: displayName || user.loginName });
+    const email = document.getElementById("profile-email").value;
+    const phone = document.getElementById("profile-phone").value;
+    if (!isValidEmail(email)) {
+      showToast("Informe um e-mail válido.", "error");
+      return;
+    }
+    if (!isValidPhone(phone)) {
+      showToast("Informe um telefone válido (10 ou 11 dígitos).", "error");
+      return;
+    }
+    persistUser({
+      displayName: displayName || user.loginName,
+      email: normalizeEmail(email),
+      phone: normalizePhone(phone),
+    });
     document.getElementById("user-badge").textContent = user.displayName;
+    document.getElementById("profile-phone").value = formatPhoneDisplay(user.phone);
     showToast("Perfil salvo.");
   });
+
+  initProfileThresholds();
 }
 
 function initIncome() {
@@ -270,6 +379,7 @@ function renderAllocationTable() {
 
   document.getElementById("table-total-percent").textContent = `${Alloc.sumEffectivePercent(savedCategories, income).toFixed(2)}%`;
   document.getElementById("table-total-value").textContent = formatCurrency(Alloc.sumCategoryValues(income, savedCategories));
+  updateThresholdSummaryRows(income);
 }
 
 function renderChart() {

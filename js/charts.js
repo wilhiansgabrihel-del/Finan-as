@@ -1,12 +1,14 @@
 const ChartTypes = {
-  doughnut: { label: "Pizza (itens)", value: "doughnut" },
+  pie: { label: "Pizza (itens)", value: "pie" },
+  doughnut: { label: "Rosca (itens)", value: "doughnut" },
   bar: { label: "Barras R$ (itens)", value: "bar" },
   barHorizontal: { label: "Barras horizontais", value: "barHorizontal" },
-  doughnutGroup: { label: "Pizza (grupos)", value: "doughnutGroup" },
+  pieGroup: { label: "Pizza (grupos)", value: "pieGroup" },
+  doughnutGroup: { label: "Rosca (grupos)", value: "doughnutGroup" },
   barGroup: { label: "Barras R$ (grupos)", value: "barGroup" },
 };
 
-const CHART_TYPE_ORDER = ["doughnut", "bar", "barHorizontal", "doughnutGroup", "barGroup"];
+const CHART_TYPE_ORDER = ["pie", "doughnut", "bar", "barHorizontal", "pieGroup", "doughnutGroup", "barGroup"];
 
 function chartSurfaceColor() {
   return getComputedStyle(document.documentElement).getPropertyValue("--surface")?.trim() || "#1a2332";
@@ -22,9 +24,9 @@ function buildItemAllocationData(categories, income, chartType) {
   const amounts = categories.map((c) => Alloc.resolveCategory(c, income).amount);
   const colors = categories.map((_, i) => CHART_COLORS[i % CHART_COLORS.length]);
   const total = Alloc.sumEffectivePercent(categories, income);
-  const isDoughnut = chartType === "doughnut";
+  const isCircularItem = chartType === "doughnut" || chartType === "pie";
 
-  if (isDoughnut && total < 99.99) {
+  if (isCircularItem && total < 99.99) {
     labels.push("Não alocado");
     percents.push(Alloc.roundMoney(100 - total));
     amounts.push(Alloc.roundMoney((income * (100 - total)) / 100));
@@ -44,11 +46,13 @@ function buildGroupAllocationData(categories, income) {
 }
 
 function buildAllocationChartOptions(chartType, meta) {
-  const isGroup = chartType === "doughnutGroup" || chartType === "barGroup";
+  const isGroup = chartType === "doughnutGroup" || chartType === "pieGroup" || chartType === "barGroup";
   const isBarMoney = chartType === "bar" || chartType === "barGroup";
   const isHorizontal = chartType === "barHorizontal";
+  const isPie = chartType === "pie" || chartType === "pieGroup";
   const isDoughnut = chartType === "doughnut" || chartType === "doughnutGroup";
-  const jsType = isDoughnut ? "doughnut" : "bar";
+  const isCircular = isPie || isDoughnut;
+  const jsType = isPie ? "pie" : isDoughnut ? "doughnut" : "bar";
   const { labels, percents, amounts, colors } = meta;
   const values = isBarMoney ? amounts : percents;
 
@@ -78,7 +82,7 @@ function buildAllocationChartOptions(chartType, meta) {
     },
   };
 
-  if (!isDoughnut) {
+  if (!isCircular) {
     options.indexAxis = isHorizontal ? "y" : "x";
     options.scales = {
       x: {
@@ -95,7 +99,7 @@ function buildAllocationChartOptions(chartType, meta) {
     } else {
       options.scales.y.ticks.callback = (v) => formatCurrency(v);
     }
-  } else {
+  } else if (isDoughnut) {
     options.cutout = "52%";
     options.radius = "70%";
   }
@@ -118,7 +122,7 @@ function buildAllocationChartOptions(chartType, meta) {
 }
 
 function getAllocationChartConfig(chartType, categories, income) {
-  if (chartType === "doughnutGroup" || chartType === "barGroup") {
+  if (chartType === "doughnutGroup" || chartType === "pieGroup" || chartType === "barGroup") {
     const meta = buildGroupAllocationData(categories, income);
     if (!meta.labels.length) return null;
     return buildAllocationChartOptions(chartType, meta);

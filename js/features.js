@@ -5,7 +5,7 @@ const CHART_TYPE_STORAGE_KEY = "financas_chart_type";
 
 const AppFeatures = {
   sortKey: "item",
-  chartType: "doughnut",
+  chartType: "pie",
   simulatorIncome: null,
   incomeHistoryChart: null,
 
@@ -99,10 +99,26 @@ const AppFeatures = {
 
     const groupsEl = document.getElementById("dash-groups");
     if (!groupsEl) return;
+    const thresholds = Alloc.mergeProfileThresholds(user.profileThresholds);
     const groups = Alloc.groupSummary(savedCategories, income);
+    const investPct = Alloc.sumCategoryLabelPercent(savedCategories, income, "Investimento");
+    const investAmount = Alloc.sumCategoryLabelAmount(savedCategories, income, "Investimento");
+
     groupsEl.innerHTML = Object.entries(groups)
-      .map(([name, g]) => `<li><strong>${escapeHtml(name)}</strong> — ${g.percent.toFixed(2)}% · ${formatCurrency(g.amount)}</li>`)
+      .map(([name, g]) => {
+        let pctClass = "";
+        if (name === "Custos Fixos") {
+          pctClass = `pct-${Alloc.fixedCostsColorStatus(g.percent, thresholds)} pct-inline`;
+        }
+        const pctHtml = pctClass
+          ? `<span class="${pctClass}">${g.percent.toFixed(2)}%</span>`
+          : `${g.percent.toFixed(2)}%`;
+        return `<li><strong>${escapeHtml(name)}</strong> — ${pctHtml} · ${formatCurrency(g.amount)}</li>`;
+      })
       .join("") || "<li class='hint'>Nenhum grupo</li>";
+
+    const investClass = `pct-${Alloc.investmentColorStatus(investPct, thresholds)} pct-inline`;
+    groupsEl.innerHTML += `<li><strong>Investimento</strong> — <span class="${investClass}">${investPct.toFixed(2)}%</span> · ${formatCurrency(investAmount)}</li>`;
   },
 
   renderIncomeHistory() {
@@ -387,8 +403,15 @@ const AppFeatures = {
           if (data.user) {
             if (data.user.monthlyIncome != null) user.monthlyIncome = data.user.monthlyIncome;
             if (data.user.monthlyDeductions != null) user.monthlyDeductions = data.user.monthlyDeductions;
+            if (data.user.profileThresholds) {
+              user.profileThresholds = Alloc.mergeProfileThresholds(data.user.profileThresholds);
+            }
           }
           AppFeatures.persistAll();
+          if (data.user?.profileThresholds) {
+            persistUser({ profileThresholds: user.profileThresholds });
+            fillThresholdForm(getProfileThresholds());
+          }
           updateAllocationUI();
           AppFeatures.renderDashboard();
           showToast("Dados importados.");

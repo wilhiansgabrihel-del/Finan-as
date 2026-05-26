@@ -115,4 +115,88 @@ const Alloc = {
     });
     return map;
   },
+
+  PROFILE_THRESHOLDS_DEFAULTS: {
+    fixedCostsMax: 70,
+    investmentMin: 25,
+    warningFrom: 60,
+    dangerFrom: 70,
+    criticalFrom: 80,
+  },
+
+  mergeProfileThresholds(raw) {
+    const d = Alloc.PROFILE_THRESHOLDS_DEFAULTS;
+    const t = { ...d, ...(raw || {}) };
+    return {
+      fixedCostsMax: Number(t.fixedCostsMax) || d.fixedCostsMax,
+      investmentMin: Number(t.investmentMin) || d.investmentMin,
+      warningFrom: Number(t.warningFrom) || d.warningFrom,
+      dangerFrom: Number(t.dangerFrom) || d.dangerFrom,
+      criticalFrom: Number(t.criticalFrom) || d.criticalFrom,
+    };
+  },
+
+  sumStructuralGroupPercent(categories, income, groupName) {
+    const target = groupName.trim().toLowerCase();
+    return categories.reduce((acc, cat) => {
+      const g = (cat.structuralGroup || "").trim().toLowerCase();
+      if (g !== target) return acc;
+      return acc + Alloc.resolveCategory(cat, income).percent;
+    }, 0);
+  },
+
+  sumCategoryLabelPercent(categories, income, categoryName) {
+    const target = categoryName.trim().toLowerCase();
+    return categories.reduce((acc, cat) => {
+      const c = (cat.category || "").trim().toLowerCase();
+      if (c !== target) return acc;
+      return acc + Alloc.resolveCategory(cat, income).percent;
+    }, 0);
+  },
+
+  sumCategoryLabelAmount(categories, income, categoryName) {
+    const target = categoryName.trim().toLowerCase();
+    return categories.reduce((acc, cat) => {
+      const c = (cat.category || "").trim().toLowerCase();
+      if (c !== target) return acc;
+      return acc + Alloc.resolveCategory(cat, income).amount;
+    }, 0);
+  },
+
+  validateProfileThresholds(raw) {
+    const t = Alloc.mergeProfileThresholds(raw);
+    const errors = [];
+    if (t.fixedCostsMax <= 0 || t.fixedCostsMax > 100) {
+      errors.push("Máximo de Custos Fixos deve estar entre 0,1% e 100%.");
+    }
+    if (t.investmentMin < 0 || t.investmentMin > 100) {
+      errors.push("Mínimo de Investimento deve estar entre 0% e 100%.");
+    }
+    if (t.warningFrom < 0 || t.warningFrom >= t.dangerFrom) {
+      errors.push("Amarelo deve ser menor que vermelho.");
+    }
+    if (t.dangerFrom >= t.criticalFrom) {
+      errors.push("Vermelho deve ser menor que rosa-choque.");
+    }
+    if (t.criticalFrom > 100) {
+      errors.push("Rosa-choque não pode passar de 100%.");
+    }
+    return { ok: errors.length === 0, errors, thresholds: t };
+  },
+
+  fixedCostsColorStatus(percent, thresholds) {
+    const t = Alloc.mergeProfileThresholds(thresholds);
+    const p = Number(percent) || 0;
+    if (p >= t.criticalFrom) return "critical";
+    if (p >= t.dangerFrom) return "danger";
+    if (p >= t.warningFrom) return "warning";
+    return "ok";
+  },
+
+  investmentColorStatus(percent, thresholds) {
+    const t = Alloc.mergeProfileThresholds(thresholds);
+    const p = Number(percent) || 0;
+    if (p < t.investmentMin) return "danger";
+    return "ok";
+  },
 };

@@ -1,3 +1,28 @@
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function normalizePhone(phone) {
+  return String(phone || "").replace(/\D/g, "");
+}
+
+function formatPhoneDisplay(digits) {
+  const d = normalizePhone(digits);
+  if (d.length === 11) return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
+  if (d.length === 10) return `(${d.slice(0, 2)}) ${d.slice(2, 6)}-${d.slice(6)}`;
+  return d;
+}
+
+function isValidEmail(email) {
+  const e = normalizeEmail(email);
+  return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+}
+
+function isValidPhone(phone) {
+  const digits = normalizePhone(phone);
+  return digits.length >= 10 && digits.length <= 11;
+}
+
 async function hashPassword(password) {
   return CryptoAuth.hashPassword(password);
 }
@@ -80,13 +105,20 @@ function migrateUserRecord(user) {
   if (!user.incomeHistory) user.incomeHistory = [];
   if (user.monthlyDeductions == null) user.monthlyDeductions = 0;
   if (user.useNetIncome == null) user.useNetIncome = true;
+  user.profileThresholds = Alloc.mergeProfileThresholds(user.profileThresholds);
   return user;
 }
 
-async function register(name, password) {
+async function register(name, password, email, phone) {
   const loginName = name.trim().toLowerCase();
   if (!loginName) {
     return { ok: false, message: "Informe um nome válido." };
+  }
+  if (!isValidEmail(email)) {
+    return { ok: false, message: "Informe um e-mail válido." };
+  }
+  if (!isValidPhone(phone)) {
+    return { ok: false, message: "Informe um telefone válido (10 ou 11 dígitos)." };
   }
   if (password.length < 4) {
     return { ok: false, message: "A senha deve ter pelo menos 4 caracteres." };
@@ -97,11 +129,21 @@ async function register(name, password) {
     return { ok: false, message: "Este nome já está em uso. Faça login ou escolha outro." };
   }
 
+  const normalizedEmail = normalizeEmail(email);
+  const normalizedPhone = normalizePhone(phone);
+  for (const u of Object.values(users)) {
+    if (u.email && normalizeEmail(u.email) === normalizedEmail) {
+      return { ok: false, message: "Este e-mail já está cadastrado." };
+    }
+  }
+
   const userId = generateUserId();
   const passwordHash = await hashPassword(password);
   users[loginName] = migrateUserRecord({
     id: userId,
     displayName: name.trim(),
+    email: normalizedEmail,
+    phone: normalizedPhone,
     password: passwordHash,
     monthlyIncome: 0,
     monthlyDeductions: 0,

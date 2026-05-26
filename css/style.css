@@ -13,6 +13,7 @@
   --radius: 12px;
   --shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
   --font: "Segoe UI", system-ui, -apple-system, sans-serif;
+  color-scheme: dark;
 }
 
 [data-theme="light"] {
@@ -23,6 +24,7 @@
   --text: #1a2332;
   --text-muted: #5a6b82;
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  color-scheme: light;
 }
 
 *,
@@ -135,7 +137,9 @@ label {
 
 input[type="text"],
 input[type="password"],
-input[type="number"] {
+input[type="number"],
+input[type="email"],
+input[type="tel"] {
   width: 100%;
   padding: 0.65rem 0.85rem;
   border: 1px solid var(--border);
@@ -144,6 +148,42 @@ input[type="number"] {
   color: var(--text);
   font: inherit;
   font-size: 1rem;
+}
+
+select {
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.25);
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text) !important;
+  caret-color: var(--text);
+  border: 1px solid var(--border);
+  -webkit-box-shadow: 0 0 0 1000px var(--surface-2) inset !important;
+  box-shadow: 0 0 0 1000px var(--surface-2) inset !important;
+  transition: background-color 99999s ease-out, color 99999s ease-out;
+}
+
+.table-toolbar select {
+  min-width: 8rem;
 }
 
 .password-field {
@@ -472,17 +512,42 @@ input:focus {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
+  min-width: 0;
+  container-type: inline-size;
 }
 
 .stat-label {
   color: var(--text-muted);
   font-size: 0.85rem;
+  line-height: 1.3;
+  overflow-wrap: break-word;
 }
 
 .stat-value {
-  font-size: 1.75rem;
+  font-size: 1.5rem;
   font-weight: 700;
   color: var(--primary);
+  line-height: 1.15;
+  max-width: 100%;
+  font-variant-numeric: tabular-nums;
+}
+
+@container (max-width: 220px) {
+  .stat-value {
+    font-size: 1.25rem;
+  }
+}
+
+@container (max-width: 185px) {
+  .stat-value {
+    font-size: 1.05rem;
+  }
+}
+
+@container (max-width: 155px) {
+  .stat-value {
+    font-size: 0.92rem;
+  }
 }
 
 .grid-2 {
@@ -997,9 +1062,13 @@ input:focus {
 
 .dashboard-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+.dashboard-grid .stat-card {
+  padding: 1rem 1.15rem;
 }
 
 .dash-list { list-style: none; margin: 0; padding: 0; }
@@ -1202,3 +1271,56 @@ input:focus {
 
 .about-page { max-width: 640px; margin: 2rem auto; padding: 1.5rem; }
 .about-page a { color: var(--primary); }
+
+/* Limiares de porcentagem (Custos Fixos / Investimento) */
+:root,
+[data-theme="dark"] {
+  --pct-warning: #facc15;
+  --pct-critical: #ff1493;
+}
+
+[data-theme="light"] {
+  --pct-warning: #ca8a04;
+  --pct-critical: #db2777;
+}
+
+.pct-cell,
+.pct-indicator {
+  font-weight: 600;
+}
+
+.pct-ok { color: var(--text-muted); }
+.pct-warning { color: var(--pct-warning); }
+.pct-danger { color: var(--danger); }
+.pct-critical { color: var(--pct-critical); }
+
+.thresholds-form {
+  display: grid;
+  gap: 0.65rem;
+  max-width: 420px;
+}
+
+.thresholds-form label {
+  margin-top: 0.35rem;
+  font-size: 0.9rem;
+}
+
+.threshold-legend {
+  margin: 0.75rem 0 0.5rem;
+  padding-left: 1.25rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.threshold-legend li {
+  margin-bottom: 0.25rem;
+}
+
+.threshold-row td {
+  border-top: 1px dashed var(--border);
+  font-size: 0.92rem;
+}
+
+.dash-list .pct-inline {
+  font-weight: 600;
+}

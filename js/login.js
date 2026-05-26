@@ -57,7 +57,17 @@ registerForm.addEventListener("submit", async (e) => {
     showError(err, "As senhas não coincidem.");
     return;
   }
-  const result = await register(document.getElementById("register-name").value, password);
+  const email = document.getElementById("register-email").value;
+  const phone = document.getElementById("register-phone").value;
+  if (!email.trim()) {
+    showError(err, "Informe o e-mail.");
+    return;
+  }
+  if (!phone.trim()) {
+    showError(err, "Informe o telefone.");
+    return;
+  }
+  const result = await register(document.getElementById("register-name").value, password, email, phone);
   if (!result.ok) {
     showError(err, result.message);
     return;

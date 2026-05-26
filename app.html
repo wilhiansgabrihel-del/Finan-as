@@ -63,6 +63,10 @@
         <form id="profile-form">
           <label for="profile-name">Nome exibido</label>
           <input type="text" id="profile-name" required>
+          <label for="profile-email">E-mail</label>
+          <input type="email" id="profile-email" autocomplete="email" required>
+          <label for="profile-phone">Telefone</label>
+          <input type="tel" id="profile-phone" autocomplete="tel" inputmode="tel" required>
           <p class="hint">Login: <strong id="profile-login"></strong></p>
           <p class="hint">ID: <code id="profile-id" class="user-id"></code></p>
           <label class="checkbox theme-check">
@@ -70,6 +74,36 @@
             <span>Tema claro</span>
           </label>
           <button type="submit" class="btn btn-primary">Salvar perfil</button>
+        </form>
+      </div>
+      <div class="card">
+        <h3>Configurações do Perfil</h3>
+        <p class="hint">Limites para colorir as porcentagens de Custos Fixos e Investimento em relação à renda.</p>
+        <form id="profile-thresholds-form" class="thresholds-form">
+          <label for="th-fixed-max">Máximo Custos Fixos (% da renda)</label>
+          <input type="number" id="th-fixed-max" min="1" max="100" step="0.1" required>
+
+          <label for="th-investment-min">Mínimo Investimento (% da renda)</label>
+          <input type="number" id="th-investment-min" min="0" max="100" step="0.1" required>
+
+          <label for="th-warning-from">Amarelo — Custos Fixos a partir de (%)</label>
+          <input type="number" id="th-warning-from" min="0" max="100" step="0.1" required>
+
+          <label for="th-danger-from">Vermelho — Custos Fixos a partir de (%)</label>
+          <input type="number" id="th-danger-from" min="0" max="100" step="0.1" required>
+
+          <label for="th-critical-from">Rosa-choque — Custos Fixos a partir de (%)</label>
+          <input type="number" id="th-critical-from" min="0" max="100" step="0.1" required>
+
+          <ul class="threshold-legend">
+            <li><span class="pct-indicator pct-ok">■</span> Abaixo de amarelo</li>
+            <li><span class="pct-indicator pct-warning">■</span> Amarelo (entre amarelo e vermelho)</li>
+            <li><span class="pct-indicator pct-danger">■</span> Vermelho (entre vermelho e rosa-choque)</li>
+            <li><span class="pct-indicator pct-critical">■</span> Rosa-choque (acima do limite rosa)</li>
+          </ul>
+          <p id="thresholds-error" class="error" hidden></p>
+          <button type="submit" class="btn btn-primary">Salvar configurações</button>
+          <button type="button" id="thresholds-reset-btn" class="btn btn-secondary">Restaurar padrão de fábrica</button>
         </form>
       </div>
       <div class="card">
@@ -207,6 +241,8 @@
             <tbody></tbody>
             <tfoot>
               <tr><td colspan="3"><strong>Total</strong></td><td id="table-total-value">R$ 0,00</td><td id="table-total-percent">0%</td><td colspan="2"></td></tr>
+              <tr class="threshold-row"><td colspan="3"><strong>Custos Fixos</strong></td><td id="table-fixed-value">R$ 0,00</td><td id="table-fixed-percent" class="pct-cell">0%</td><td colspan="2"></td></tr>
+              <tr class="threshold-row"><td colspan="3"><strong>Investimento</strong></td><td id="table-invest-value">R$ 0,00</td><td id="table-invest-percent" class="pct-cell">0%</td><td colspan="2"></td></tr>
             </tfoot>
           </table>
         </div>
